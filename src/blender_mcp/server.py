@@ -13,6 +13,14 @@ from pathlib import Path
 import base64
 from urllib.parse import urlparse
 
+# YouTube Video Analyzer imports
+import yt_dlp
+import cv2
+import whisper
+from PIL import Image as PILImage
+import numpy as np
+from datetime import datetime
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -870,6 +878,437 @@ def import_generated_asset(
     except Exception as e:
         logger.error(f"Error generating Hyper3D task: {str(e)}")
         return f"Error generating Hyper3D task: {str(e)}"
+
+# ============================================================================
+# YouTube Video Analyzer Tools
+# ============================================================================
+
+# Global variable for Whisper model (lazy loading)
+_whisper_model = None
+
+def get_whisper_model(model_size: str = "base"):
+    """Get or load the Whisper model"""
+    global _whisper_model
+    if _whisper_model is None:
+        logger.info(f"Loading Whisper model: {model_size}")
+        _whisper_model = whisper.load_model(model_size)
+        logger.info("Whisper model loaded successfully")
+    return _whisper_model
+
+def get_video_cache_dir() -> Path:
+    """Get or create the video cache directory"""
+    cache_dir = Path(tempfile.gettempdir()) / "blender_mcp_videos"
+    cache_dir.mkdir(exist_ok=True)
+    return cache_dir
+
+@mcp.tool()
+def download_youtube_video(
+    ctx: Context,
+    url: str,
+    quality: str = "720p"
+) -> str:
+    """
+    Download a YouTube video and extract its metadata.
+
+    Parameters:
+    - url: The YouTube video URL
+    - quality: Preferred video quality (360p, 480p, 720p, 1080p, best). Default: 720p
+
+    Returns JSON string with video information and local file path.
+    """
+    try:
+        logger.info(f"Downloading YouTube video: {url}")
+        cache_dir = get_video_cache_dir()
+
+        # Configure yt-dlp options
+        ydl_opts = {
+            'format': f'bestvideo[height<={quality[:-1]}]+bestaudio/best[height<={quality[:-1]}]' if quality != 'best' else 'best',
+            'outtmpl': str(cache_dir / '%(id)s.%(ext)s'),
+            'quiet': False,
+            'no_warnings': False,
+            'merge_output_format': 'mp4',
+        }
+
+        # Download and extract info
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+
+            # Get the downloaded file path
+            video_id = info['id']
+            video_ext = info.get('ext', 'mp4')
+            video_path = cache_dir / f"{video_id}.{video_ext}"
+
+            # Extract relevant metadata
+            metadata = {
+                "success": True,
+                "video_id": video_id,
+                "title": info.get('title', 'Unknown'),
+                "duration": info.get('duration', 0),
+                "uploader": info.get('uploader', 'Unknown'),
+                "upload_date": info.get('upload_date', 'Unknown'),
+                "view_count": info.get('view_count', 0),
+                "like_count": info.get('like_count', 0),
+                "description": info.get('description', '')[:500],  # Truncate long descriptions
+                "thumbnail": info.get('thumbnail', ''),
+                "width": info.get('width', 0),
+                "height": info.get('height', 0),
+                "fps": info.get('fps', 0),
+                "local_path": str(video_path),
+                "filesize_mb": round(video_path.stat().st_size / (1024 * 1024), 2) if video_path.exists() else 0
+            }
+
+            logger.info(f"Video downloaded successfully: {metadata['title']}")
+            return json.dumps(metadata, indent=2)
+
+    except Exception as e:
+        logger.error(f"Error downloading YouTube video: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        }, indent=2)
+
+@mcp.tool()
+def extract_video_frames(
+    ctx: Context,
+    video_path: str,
+    interval_seconds: float = 5.0,
+    max_frames: int = 10,
+    output_format: str = "jpg"
+) -> str:
+    """
+    Extract frames from a video file at regular intervals.
+
+    Parameters:
+    - video_path: Path to the video file (from download_youtube_video)
+    - interval_seconds: Time interval between frames in seconds. Default: 5.0
+    - max_frames: Maximum number of frames to extract. Default: 10
+    - output_format: Image format (jpg, png). Default: jpg
+
+    Returns JSON string with paths to extracted frames and frame information.
+    """
+    try:
+        logger.info(f"Extracting frames from video: {video_path}")
+
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+
+        # Open video
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise Exception(f"Failed to open video file: {video_path}")
+
+        # Get video properties
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        duration = total_frames / fps if fps > 0 else 0
+
+        logger.info(f"Video properties: {fps} fps, {total_frames} frames, {duration:.2f} seconds")
+
+        # Calculate frame interval
+        frame_interval = int(interval_seconds * fps)
+
+        # Create output directory
+        video_name = Path(video_path).stem
+        frames_dir = get_video_cache_dir() / f"{video_name}_frames"
+        frames_dir.mkdir(exist_ok=True)
+
+        extracted_frames = []
+        frame_count = 0
+        current_frame = 0
+
+        while frame_count < max_frames and current_frame < total_frames:
+            # Set frame position
+            cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
+            ret, frame = cap.read()
+
+            if not ret:
+                break
+
+            # Save frame
+            timestamp = current_frame / fps
+            frame_filename = f"frame_{frame_count:04d}_t{timestamp:.2f}s.{output_format}"
+            frame_path = frames_dir / frame_filename
+
+            cv2.imwrite(str(frame_path), frame)
+
+            extracted_frames.append({
+                "frame_number": current_frame,
+                "timestamp": round(timestamp, 2),
+                "path": str(frame_path),
+                "width": frame.shape[1],
+                "height": frame.shape[0]
+            })
+
+            frame_count += 1
+            current_frame += frame_interval
+
+        cap.release()
+
+        result = {
+            "success": True,
+            "video_path": video_path,
+            "video_duration": round(duration, 2),
+            "video_fps": round(fps, 2),
+            "total_video_frames": total_frames,
+            "extracted_frames_count": len(extracted_frames),
+            "interval_seconds": interval_seconds,
+            "frames_directory": str(frames_dir),
+            "frames": extracted_frames
+        }
+
+        logger.info(f"Extracted {len(extracted_frames)} frames successfully")
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        logger.error(f"Error extracting frames: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        }, indent=2)
+
+@mcp.tool()
+def transcribe_video_audio(
+    ctx: Context,
+    video_path: str,
+    model_size: str = "base",
+    language: str = None
+) -> str:
+    """
+    Transcribe audio from a video file using Whisper.
+
+    Parameters:
+    - video_path: Path to the video file
+    - model_size: Whisper model size (tiny, base, small, medium, large). Default: base
+    - language: Language code (en, de, es, etc.) or None for auto-detection
+
+    Returns JSON string with transcription and segments.
+    """
+    try:
+        logger.info(f"Transcribing audio from video: {video_path}")
+
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+
+        # Load Whisper model
+        model = get_whisper_model(model_size)
+
+        # Transcribe
+        logger.info("Starting transcription (this may take a while)...")
+        result = model.transcribe(
+            video_path,
+            language=language,
+            verbose=False
+        )
+
+        # Extract segments with timestamps
+        segments = []
+        for segment in result.get('segments', []):
+            segments.append({
+                "id": segment['id'],
+                "start": round(segment['start'], 2),
+                "end": round(segment['end'], 2),
+                "text": segment['text'].strip()
+            })
+
+        transcription_result = {
+            "success": True,
+            "video_path": video_path,
+            "detected_language": result.get('language', 'unknown'),
+            "full_text": result.get('text', ''),
+            "segments_count": len(segments),
+            "segments": segments[:50]  # Limit to first 50 segments for response size
+        }
+
+        logger.info(f"Transcription completed: {len(segments)} segments")
+        return json.dumps(transcription_result, indent=2)
+
+    except Exception as e:
+        logger.error(f"Error transcribing audio: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        }, indent=2)
+
+@mcp.tool()
+def analyze_youtube_video(
+    ctx: Context,
+    url: str,
+    quality: str = "720p",
+    extract_frames: bool = True,
+    frame_interval: float = 10.0,
+    max_frames: int = 6,
+    transcribe: bool = True,
+    whisper_model: str = "base"
+) -> str:
+    """
+    Comprehensive analysis of a YouTube video including download, metadata extraction,
+    frame extraction, and audio transcription.
+
+    Parameters:
+    - url: YouTube video URL
+    - quality: Video quality (360p, 480p, 720p, 1080p, best). Default: 720p
+    - extract_frames: Whether to extract frames. Default: True
+    - frame_interval: Seconds between extracted frames. Default: 10.0
+    - max_frames: Maximum number of frames to extract. Default: 6
+    - transcribe: Whether to transcribe audio. Default: True
+    - whisper_model: Whisper model size (tiny, base, small, medium, large). Default: base
+
+    Returns comprehensive JSON analysis of the video.
+    """
+    try:
+        logger.info(f"Starting comprehensive analysis of YouTube video: {url}")
+
+        # Step 1: Download video
+        download_result = download_youtube_video(ctx, url, quality)
+        download_data = json.loads(download_result)
+
+        if not download_data.get("success"):
+            return download_result
+
+        video_path = download_data["local_path"]
+        analysis = {
+            "success": True,
+            "url": url,
+            "analyzed_at": datetime.now().isoformat(),
+            "metadata": download_data
+        }
+
+        # Step 2: Extract frames (if requested)
+        if extract_frames:
+            logger.info("Extracting video frames...")
+            frames_result = extract_video_frames(
+                ctx,
+                video_path,
+                interval_seconds=frame_interval,
+                max_frames=max_frames
+            )
+            frames_data = json.loads(frames_result)
+            analysis["frames"] = frames_data
+
+        # Step 3: Transcribe audio (if requested)
+        if transcribe:
+            logger.info("Transcribing audio...")
+            transcription_result = transcribe_video_audio(
+                ctx,
+                video_path,
+                model_size=whisper_model
+            )
+            transcription_data = json.loads(transcription_result)
+            analysis["transcription"] = transcription_data
+
+        logger.info("Video analysis completed successfully")
+        return json.dumps(analysis, indent=2)
+
+    except Exception as e:
+        logger.error(f"Error in comprehensive video analysis: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        }, indent=2)
+
+@mcp.tool()
+def get_video_frame_as_image(
+    ctx: Context,
+    frame_path: str
+) -> Image:
+    """
+    Get a video frame as an MCP Image object for visual analysis by Claude.
+
+    Parameters:
+    - frame_path: Path to the frame image file (from extract_video_frames)
+
+    Returns the frame as an Image that Claude can analyze.
+    """
+    try:
+        if not os.path.exists(frame_path):
+            raise FileNotFoundError(f"Frame file not found: {frame_path}")
+
+        # Read the image file
+        with open(frame_path, 'rb') as f:
+            image_bytes = f.read()
+
+        # Determine format from extension
+        ext = Path(frame_path).suffix.lower()
+        format_map = {
+            '.jpg': 'jpeg',
+            '.jpeg': 'jpeg',
+            '.png': 'png'
+        }
+        image_format = format_map.get(ext, 'jpeg')
+
+        return Image(data=image_bytes, format=image_format)
+
+    except Exception as e:
+        logger.error(f"Error loading frame as image: {str(e)}")
+        raise Exception(f"Failed to load frame: {str(e)}")
+
+@mcp.tool()
+def cleanup_video_cache(
+    ctx: Context,
+    video_id: str = None
+) -> str:
+    """
+    Clean up cached video files and extracted frames.
+
+    Parameters:
+    - video_id: Optional video ID to clean up specific video. If None, cleans all cached videos.
+
+    Returns summary of cleaned files.
+    """
+    try:
+        cache_dir = get_video_cache_dir()
+
+        if not cache_dir.exists():
+            return json.dumps({
+                "success": True,
+                "message": "Cache directory does not exist",
+                "files_deleted": 0
+            })
+
+        deleted_files = 0
+        deleted_size = 0
+
+        if video_id:
+            # Clean specific video
+            for file in cache_dir.glob(f"{video_id}*"):
+                if file.is_file():
+                    deleted_size += file.stat().st_size
+                    file.unlink()
+                    deleted_files += 1
+                elif file.is_dir():
+                    import shutil
+                    deleted_size += sum(f.stat().st_size for f in file.rglob('*') if f.is_file())
+                    shutil.rmtree(file)
+                    deleted_files += 1
+        else:
+            # Clean all
+            import shutil
+            if cache_dir.exists():
+                deleted_size = sum(f.stat().st_size for f in cache_dir.rglob('*') if f.is_file())
+                deleted_files = len(list(cache_dir.rglob('*')))
+                shutil.rmtree(cache_dir)
+                cache_dir.mkdir(exist_ok=True)
+
+        result = {
+            "success": True,
+            "files_deleted": deleted_files,
+            "space_freed_mb": round(deleted_size / (1024 * 1024), 2),
+            "video_id": video_id if video_id else "all"
+        }
+
+        logger.info(f"Cache cleanup: {deleted_files} files deleted, {result['space_freed_mb']} MB freed")
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        logger.error(f"Error cleaning up cache: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        }, indent=2)
+
+# ============================================================================
+# End of YouTube Video Analyzer Tools
+# ============================================================================
 
 @mcp.prompt()
 def asset_creation_strategy() -> str:

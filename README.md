@@ -34,10 +34,17 @@ Give feedback, get inspired, and build on top of the MCP: [Discord](https://disc
 
 [Support this project](https://github.com/sponsors/ahujasid)
 
-## Release notes (1.2.0)
+## Release notes (1.3.0)
+- **NEW: YouTube Video Analyzer** - Download, analyze, and transcribe YouTube videos with AI
+  - Download videos and extract metadata
+  - Extract frames for visual analysis
+  - Transcribe audio using OpenAI Whisper
+  - Comprehensive video analysis tool
+  - See [YOUTUBE_ANALYZER.md](YOUTUBE_ANALYZER.md) for full documentation
+
+### Previously added features (1.2.0)
 - View screenshots for Blender viewport to better understand the scene
 - Search and download Sketchfab models
-
 
 ### Previously added features:
 - Support for Poly Haven assets through their API
@@ -48,11 +55,19 @@ Give feedback, get inspired, and build on top of the MCP: [Discord](https://disc
 
 ## Features
 
+### Blender Integration
 - **Two-way communication**: Connect Claude AI to Blender through a socket-based server
 - **Object manipulation**: Create, modify, and delete 3D objects in Blender
 - **Material control**: Apply and modify materials and colors
 - **Scene inspection**: Get detailed information about the current Blender scene
 - **Code execution**: Run arbitrary Python code in Blender from Claude
+
+### YouTube Video Analyzer (New!)
+- **Video Download**: Download YouTube videos in various qualities
+- **Frame Extraction**: Extract frames at regular intervals for visual analysis
+- **Audio Transcription**: Transcribe video audio using OpenAI Whisper
+- **Comprehensive Analysis**: All-in-one video analysis tool
+- See [YOUTUBE_ANALYZER.md](YOUTUBE_ANALYZER.md) for detailed documentation
 
 ## Components
 
