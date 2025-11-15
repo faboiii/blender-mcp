@@ -20,15 +20,32 @@ logger = logging.getLogger("BlenderMCPServer")
 
 @dataclass
 class BlenderConnection:
+    """
+    Manages the TCP socket connection to the Blender addon.
+
+    Attributes:
+        host: The hostname/IP address of the Blender addon server
+        port: The port number the Blender addon is listening on
+        sock: The active socket connection (None if not connected)
+    """
     host: str
     port: int
-    sock: socket.socket = None  # Changed from 'socket' to 'sock' to avoid naming conflict
-    
+    sock: socket.socket | None = None
+
     def connect(self) -> bool:
-        """Connect to the Blender addon socket server"""
+        """
+        Establish a connection to the Blender addon socket server.
+
+        Returns:
+            bool: True if connection successful or already connected, False otherwise
+
+        Note:
+            If already connected, returns True without creating a new connection.
+            On failure, sets sock to None and logs the error.
+        """
         if self.sock:
             return True
-            
+
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.host, self.port))
@@ -39,8 +56,13 @@ class BlenderConnection:
             self.sock = None
             return False
     
-    def disconnect(self):
-        """Disconnect from the Blender addon"""
+    def disconnect(self) -> None:
+        """
+        Close the connection to the Blender addon.
+
+        Note:
+            Always sets sock to None, even if an error occurs during closure.
+        """
         if self.sock:
             try:
                 self.sock.close()
@@ -49,8 +71,24 @@ class BlenderConnection:
             finally:
                 self.sock = None
 
-    def receive_full_response(self, sock, buffer_size=8192):
-        """Receive the complete response, potentially in multiple chunks"""
+    def receive_full_response(self, sock: socket.socket, buffer_size: int = 8192) -> bytes:
+        """
+        Receive a complete JSON response from Blender, handling chunked data.
+
+        Args:
+            sock: The socket to receive data from
+            buffer_size: Size of each receive buffer (default: 8192 bytes)
+
+        Returns:
+            bytes: Complete JSON response data
+
+        Raises:
+            Exception: If connection closes prematurely, timeout occurs, or incomplete data received
+
+        Note:
+            Continues receiving until a complete JSON object is assembled.
+            Uses 15-second timeout to match Blender addon timeout.
+        """
         chunks = []
         # Use a consistent timeout value that matches the addon's timeout
         sock.settimeout(15.0)  # Match the addon's timeout
@@ -105,8 +143,25 @@ class BlenderConnection:
         else:
             raise Exception("No data received")
 
-    def send_command(self, command_type: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Send a command to Blender and return the response"""
+    def send_command(self, command_type: str, params: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        """
+        Send a command to Blender and receive the response.
+
+        Args:
+            command_type: The type of command to execute (e.g., "get_scene_info")
+            params: Optional dictionary of parameters for the command
+
+        Returns:
+            Dict[str, Any]: The result from Blender's response
+
+        Raises:
+            ConnectionError: If not connected and unable to connect to Blender
+            Exception: For various communication errors (timeout, invalid JSON, Blender errors)
+
+        Note:
+            Automatically reconnects if not currently connected.
+            Invalidates socket connection on errors to force reconnection on next call.
+        """
         if not self.sock and not self.connect():
             raise ConnectionError("Not connected to Blender")
         
@@ -203,10 +258,23 @@ mcp = FastMCP(
 _blender_connection = None
 _polyhaven_enabled = False  # Add this global variable
 
-def get_blender_connection():
-    """Get or create a persistent Blender connection"""
-    global _blender_connection, _polyhaven_enabled  # Add _polyhaven_enabled to globals
-    
+def get_blender_connection() -> BlenderConnection:
+    """
+    Get or create a persistent Blender connection.
+
+    Returns:
+        BlenderConnection: Active connection to Blender addon
+
+    Raises:
+        Exception: If unable to connect to Blender
+
+    Note:
+        Maintains a global singleton connection.
+        Automatically validates and recreates dead connections.
+        Updates global _polyhaven_enabled state on each call.
+    """
+    global _blender_connection, _polyhaven_enabled
+
     # If we have an existing connection, check if it's still valid
     if _blender_connection is not None:
         try:
