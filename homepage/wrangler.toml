@@ -1,0 +1,5 @@
+name = "fabiolous-homepage"
+compatibility_date = "2026-02-25"
+
+[site]
+bucket = "./public"
