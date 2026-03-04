@@ -1,0 +1,115 @@
+/* ─── Pokemon Tracker Styles ─────────────────────────────────── */
+
+:root {
+  --pokemon-red:    #cc0000;
+  --pokemon-yellow: #ffcb05;
+  --pokemon-blue:   #003a70;
+}
+
+body {
+  background: #f4f6f9;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Navbar */
+.pokemon-navbar {
+  background: linear-gradient(135deg, var(--pokemon-red) 0%, #990000 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.pokemon-navbar .navbar-brand { letter-spacing: 1px; font-size: 1.2rem; }
+
+/* Stat Cards */
+.stat-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  transition: transform .15s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-number { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
+.stat-label  { font-size: .78rem; color: #6c757d; margin-top: 4px; }
+
+/* Pokemon card thumbnails */
+.pokemon-card-thumb {
+  border-radius: 10px;
+  transition: box-shadow .2s, transform .15s;
+  border: 1px solid #dee2e6;
+  overflow: hidden;
+}
+.pokemon-card-thumb:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  transform: translateY(-3px);
+}
+.pokemon-card-thumb .card-img-top {
+  object-fit: contain;
+  height: 180px;
+  background: #f8f9fa;
+}
+.card-img-placeholder {
+  height: 180px;
+  background: #f0f0f0;
+}
+.card-img-placeholder-large {
+  height: 340px;
+  background: #f0f0f0;
+  width: 100%;
+}
+
+/* Pokemon Detail Image */
+.pokemon-detail-img {
+  max-height: 380px;
+  width: 100%;
+  object-fit: contain;
+}
+
+/* Condition badges */
+.condition-badge { font-size: .8rem; padding: .3em .6em; border-radius: 4px; }
+.condition-M  { background: #FFD700; color: #000; }
+.condition-NM { background: #28a745; color: #fff; }
+.condition-LP { background: #17a2b8; color: #fff; }
+.condition-MP { background: #fd7e14; color: #fff; }
+.condition-HP { background: #dc3545; color: #fff; }
+.condition-D  { background: #6c757d; color: #fff; }
+
+/* Pokemon type badges */
+.type-badge {
+  display: inline-block;
+  padding: .25em .55em;
+  border-radius: 4px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 1px;
+}
+.type-colorless  { background: #A8A878; }
+.type-darkness   { background: #705848; }
+.type-dragon     { background: #7038F8; }
+.type-fairy      { background: #EE99AC; color: #333; }
+.type-fighting   { background: #C03028; }
+.type-fire       { background: #F08030; }
+.type-grass      { background: #78C850; }
+.type-lightning  { background: #F8D030; color: #333; }
+.type-metal      { background: #B8B8D0; color: #333; }
+.type-psychic    { background: #F85888; }
+.type-water      { background: #6890F0; }
+.type-free       { background: #68A090; }
+
+/* Info blocks on card detail page */
+.info-block {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  height: 100%;
+}
+
+/* Attack rows */
+.attack-row:last-child { border-bottom: none !important; }
+
+/* Compare table */
+.compare-table th, .compare-table td { vertical-align: middle; }
+
+/* Search result cards */
+.search-result-card:hover { cursor: pointer; }
+
+/* Utility */
+.fs-5 { font-size: 1.1rem !important; }
