@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Karten suchen – Pokemon Tracker{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-search me-2 text-warning"></i>Karten suchen</h2>
+
+<form method="get" action="/suche" class="mb-4">
+  <div class="input-group input-group-lg">
+    <input type="text" name="q" value="{{ query }}" class="form-control"
+           placeholder="Pokemonname eingeben (z.B. Pikachu, Charizard...)" autofocus>
+    <button class="btn btn-warning fw-bold" type="submit">
+      <i class="bi bi-search me-1"></i>Suchen
+    </button>
+  </div>
+</form>
+
+{% if query %}
+  {% if results %}
+  <p class="text-muted mb-3">{{ total }} Karten für „{{ query }}" gefunden</p>
+  <div class="row g-3">
+    {% for card in results %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="card h-100 pokemon-card-thumb search-result-card">
+        {% if card.image_url %}
+        <img src="{{ card.image_url }}" class="card-img-top p-2" alt="{{ card.name }}" loading="lazy">
+        {% else %}
+        <div class="card-img-placeholder d-flex align-items-center justify-content-center">
+          <i class="bi bi-image text-muted" style="font-size:3rem;"></i>
+        </div>
+        {% endif %}
+        <div class="card-body p-2">
+          <h6 class="card-title mb-1 text-truncate">{{ card.name }}</h6>
+          <small class="text-muted d-block text-truncate">{{ card.set_name or '' }}</small>
+          <div class="d-flex justify-content-between align-items-center mt-1">
+            {% if card.rarity %}
+            <span class="badge bg-secondary text-truncate" style="max-width:80px">{{ card.rarity }}</span>
+            {% endif %}
+            {% if card.market_price_market %}
+            <small class="text-success fw-bold">€{{ "%.2f"|format(card.market_price_market) }}</small>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-footer p-2 bg-transparent border-top-0">
+          <a href="/karte/neu?api_id={{ card.api_id }}"
+             class="btn btn-sm btn-primary w-100">
+            <i class="bi bi-plus-circle me-1"></i>Hinzufügen
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if total > page_size %}
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page > 1 %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ page - 1 }}">Zurück</a>
+      </li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Seite {{ page }}</span></li>
+      {% if page * page_size < total %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ page + 1 }}">Weiter</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-circle me-2"></i>Keine Karten für „{{ query }}" gefunden.
+  </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

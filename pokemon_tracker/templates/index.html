@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Meine Sammlung – Pokemon Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-collection-fill me-2 text-warning"></i>Meine Sammlung</h2>
+  <a href="/suche" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Karte hinzufügen</a>
+</div>
+
+<!-- Stats Overview -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        <div class="stat-number">{{ stats.total_cards }}</div>
+        <div class="stat-label">Karten gesamt</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        <div class="stat-number">{{ stats.unique_pokemon }}</div>
+        <div class="stat-label">Einzigartige Karten</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        <div class="stat-number text-success">€{{ "%.2f"|format(stats.total_value) }}</div>
+        <div class="stat-label">Gesamtwert</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        {% if stats.profit_loss >= 0 %}
+        <div class="stat-number text-success">+€{{ "%.2f"|format(stats.profit_loss) }}</div>
+        {% else %}
+        <div class="stat-number text-danger">-€{{ "%.2f"|format(stats.profit_loss|abs) }}</div>
+        {% endif %}
+        <div class="stat-label">Gewinn/Verlust</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if cards %}
+<!-- Filter & Sort Bar -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <input type="text" id="filterInput" class="form-control form-control-sm" placeholder="Karten filtern...">
+      </div>
+      <div class="col-md-3">
+        <select id="conditionFilter" class="form-select form-select-sm">
+          <option value="">Alle Zustände</option>
+          {% for c, l in condition_labels.items() %}
+          <option value="{{ c }}">{{ c }} – {{ l.split(' ')[0] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select id="sortSelect" class="form-select form-select-sm">
+          <option value="name">Name A–Z</option>
+          <option value="value_desc">Wert absteigend</option>
+          <option value="value_asc">Wert aufsteigend</option>
+          <option value="date_desc">Neueste zuerst</option>
+        </select>
+      </div>
+      <div class="col-md-3 text-end">
+        <a href="/vergleich" class="btn btn-outline-secondary btn-sm"><i class="bi bi-bar-chart-steps me-1"></i>Vergleichen</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Card Grid -->
+<div class="row g-3" id="cardGrid">
+  {% for card in cards %}
+  <div class="col-6 col-md-4 col-lg-3 card-item"
+       data-name="{{ card.name|lower }}"
+       data-condition="{{ card.condition }}"
+       data-value="{{ card.estimated_value or 0 }}"
+       data-date="{{ card.added_at.isoformat() }}">
+    <a href="/karte/{{ card.id }}" class="text-decoration-none">
+      <div class="card h-100 pokemon-card-thumb">
+        {% if card.image_url %}
+        <img src="{{ card.image_url }}" class="card-img-top p-2" alt="{{ card.name }}" loading="lazy">
+        {% else %}
+        <div class="card-img-placeholder d-flex align-items-center justify-content-center">
+          <i class="bi bi-image text-muted" style="font-size:3rem;"></i>
+        </div>
+        {% endif %}
+        <div class="card-body p-2">
+          <h6 class="card-title mb-1 text-truncate text-dark">{{ card.name }}</h6>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="badge condition-badge condition-{{ card.condition }}">{{ card.condition }}</span>
+            {% if card.estimated_value %}
+            <small class="text-success fw-bold">€{{ "%.2f"|format(card.estimated_value) }}</small>
+            {% endif %}
+          </div>
+          {% if card.quantity > 1 %}
+          <small class="text-muted">×{{ card.quantity }}</small>
+          {% endif %}
+          {% if card.is_graded %}
+          <span class="badge bg-warning text-dark ms-1"><i class="bi bi-star-fill"></i> {{ card.grade_score }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-collection display-1 text-muted"></i>
+  <h4 class="mt-3 text-muted">Deine Sammlung ist noch leer</h4>
+  <p class="text-muted">Suche nach Karten und füge sie deiner Sammlung hinzu.</p>
+  <a href="/suche" class="btn btn-primary btn-lg"><i class="bi bi-search me-2"></i>Karten suchen</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const grid = document.getElementById('cardGrid');
+const items = grid ? Array.from(grid.querySelectorAll('.card-item')) : [];
+
+function applyFilters() {
+  const q = document.getElementById('filterInput').value.toLowerCase();
+  const cond = document.getElementById('conditionFilter').value;
+  const sort = document.getElementById('sortSelect').value;
+
+  let visible = items.filter(el => {
+    const nameMatch = el.dataset.name.includes(q);
+    const condMatch = !cond || el.dataset.condition === cond;
+    return nameMatch && condMatch;
+  });
+
+  visible.sort((a, b) => {
+    if (sort === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+    if (sort === 'value_desc') return parseFloat(b.dataset.value) - parseFloat(a.dataset.value);
+    if (sort === 'value_asc') return parseFloat(a.dataset.value) - parseFloat(b.dataset.value);
+    if (sort === 'date_desc') return b.dataset.date.localeCompare(a.dataset.date);
+    return 0;
+  });
+
+  items.forEach(el => el.style.display = 'none');
+  visible.forEach(el => { el.style.display = ''; grid.appendChild(el); });
+}
+
+['filterInput','conditionFilter','sortSelect'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', applyFilters);
+});
+</script>
+{% endblock %}

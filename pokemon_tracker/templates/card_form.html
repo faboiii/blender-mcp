@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{% if edit_mode %}Karte bearbeiten{% else %}Karte hinzufügen{% endif %} – Pokemon Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h2 class="mb-4">
+      <i class="bi bi-{% if edit_mode %}pencil{% else %}plus-circle{% endif %} me-2 text-warning"></i>
+      {% if edit_mode %}Karte bearbeiten{% else %}Karte hinzufügen{% endif %}
+    </h2>
+
+    <form method="post"
+          action="{% if edit_mode %}/karte/{{ card_id }}/bearbeiten{% else %}/karte/neu{% endif %}">
+      {% if not edit_mode %}
+      <!-- Hidden API fields (prefilled from search) -->
+      <input type="hidden" name="api_id" value="{{ prefill.get('api_id', '') }}">
+      <input type="hidden" name="image_url" value="{{ prefill.get('image_url', '') }}">
+      <input type="hidden" name="image_url_hires" value="{{ prefill.get('image_url_hires', '') }}">
+      <input type="hidden" name="market_price_market" value="{{ prefill.get('market_price_market', '') }}">
+      <input type="hidden" name="types" value="{{ prefill.get('types', '') }}">
+
+      <!-- Card Info -->
+      <div class="card mb-3">
+        <div class="card-header"><strong>Karteninformationen</strong></div>
+        <div class="card-body">
+          {% if prefill.get('image_url') %}
+          <div class="text-center mb-3">
+            <img src="{{ prefill.image_url }}" alt="{{ prefill.get('name','') }}" style="max-height:200px;">
+          </div>
+          {% endif %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Name *</label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ prefill.get('name', '') }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Set</label>
+              <input type="text" name="set_name" class="form-control"
+                     value="{{ prefill.get('set_name', '') }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Nummer</label>
+              <input type="text" name="number" class="form-control"
+                     value="{{ prefill.get('number', '') }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Seltenheit</label>
+              <input type="text" name="rarity" class="form-control"
+                     value="{{ prefill.get('rarity', '') }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">HP</label>
+              <input type="number" name="hp" class="form-control"
+                     value="{{ prefill.get('hp', '') }}">
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <!-- In edit mode the card info is read-only -->
+      {% endif %}
+
+      <!-- Collection Data -->
+      <div class="card mb-3">
+        <div class="card-header"><strong>Sammlungsdaten</strong></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Zustand *</label>
+              <select name="condition" class="form-select">
+                {% for c in conditions %}
+                <option value="{{ c }}"
+                  {% if prefill.get('condition', 'NM') == c %}selected{% endif %}>
+                  {{ c }} – {{ condition_labels[c] }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Anzahl *</label>
+              <input type="number" name="quantity" class="form-control" min="1"
+                     value="{{ prefill.get('quantity', 1) }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Kaufpreis (€)</label>
+              <input type="number" step="0.01" name="purchase_price" class="form-control"
+                     value="{{ prefill.get('purchase_price', '') }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-center gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_foil" id="isFoil"
+                       value="1" {% if prefill.get('is_foil') %}checked{% endif %}>
+                <label class="form-check-label" for="isFoil">Foil / Holo</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_graded" id="isGraded"
+                       value="1" {% if prefill.get('is_graded') %}checked{% endif %}
+                       onchange="toggleGrade(this)">
+                <label class="form-check-label" for="isGraded">Gegraded</label>
+              </div>
+            </div>
+            <div class="col-md-4" id="gradeScoreField"
+                 style="{% if not prefill.get('is_graded') %}display:none{% endif %}">
+              <label class="form-label">Grade (z.B. PSA 10)</label>
+              <input type="number" step="0.5" min="1" max="10" name="grade_score" class="form-control"
+                     value="{{ prefill.get('grade_score', '') }}">
+            </div>
+            <div class="col-md-4" id="gradingCompanyField"
+                 style="{% if not prefill.get('is_graded') %}display:none{% endif %}">
+              <label class="form-label">Grading-Firma</label>
+              <input type="text" name="grading_company" class="form-control"
+                     value="{{ prefill.get('grading_company', '') }}"
+                     placeholder="PSA, BGS, CGC...">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notizen</label>
+              <textarea name="notes" class="form-control" rows="3"
+                        placeholder="Eigene Anmerkungen...">{{ prefill.get('notes', '') }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-circle me-1"></i>
+          {% if edit_mode %}Speichern{% else %}Zur Sammlung hinzufügen{% endif %}
+        </button>
+        <a href="/" class="btn btn-outline-secondary">Abbrechen</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleGrade(cb) {
+  const show = cb.checked;
+  document.getElementById('gradeScoreField').style.display = show ? '' : 'none';
+  document.getElementById('gradingCompanyField').style.display = show ? '' : 'none';
+}
+</script>
+{% endblock %}

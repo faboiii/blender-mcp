@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}{{ card.name }} – Pokemon Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück zur Sammlung
+  </a>
+</div>
+
+<div class="row g-4">
+  <!-- Card Image -->
+  <div class="col-md-4 text-center">
+    {% if card.image_url_hires or card.image_url %}
+    <img src="{{ card.image_url_hires or card.image_url }}"
+         alt="{{ card.name }}"
+         class="img-fluid rounded shadow pokemon-detail-img">
+    {% else %}
+    <div class="card-img-placeholder-large d-flex align-items-center justify-content-center rounded shadow">
+      <i class="bi bi-image text-muted" style="font-size:6rem;"></i>
+    </div>
+    {% endif %}
+    <!-- Badges -->
+    <div class="mt-3 d-flex flex-wrap gap-2 justify-content-center">
+      <span class="badge condition-badge condition-{{ card.condition }} fs-6">
+        {{ card.condition }}
+      </span>
+      {% if card.is_foil %}
+      <span class="badge bg-info">✨ Foil/Holo</span>
+      {% endif %}
+      {% if card.is_graded %}
+      <span class="badge bg-warning text-dark">
+        <i class="bi bi-star-fill me-1"></i>
+        {{ card.grading_company or 'Graded' }} {{ card.grade_score }}
+      </span>
+      {% endif %}
+      {% if card.quantity > 1 %}
+      <span class="badge bg-secondary">×{{ card.quantity }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Card Info -->
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <h2 class="mb-0">{{ card.name }}</h2>
+      <div class="d-flex gap-2">
+        <a href="/karte/{{ card.id }}/bearbeiten" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="post" action="/karte/{{ card.id }}/loeschen"
+              onsubmit="return confirm('Karte wirklich löschen?')">
+          <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Basic Info Table -->
+    <div class="row g-2 mb-3">
+      {% if card.set_name %}
+      <div class="col-6">
+        <div class="info-block">
+          <small class="text-muted">Set</small>
+          <div>{{ card.set_name }} {% if card.number %}#{{ card.number }}{% endif %}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if card.rarity %}
+      <div class="col-6">
+        <div class="info-block">
+          <small class="text-muted">Seltenheit</small>
+          <div>{{ card.rarity }}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if card.supertype %}
+      <div class="col-6">
+        <div class="info-block">
+          <small class="text-muted">Typ</small>
+          <div>{{ card.supertype }}{% if card.subtypes %} – {{ card.subtypes }}{% endif %}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if card.hp %}
+      <div class="col-6">
+        <div class="info-block">
+          <small class="text-muted">HP</small>
+          <div class="fw-bold text-danger">{{ card.hp }} HP</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if card.types %}
+      <div class="col-6">
+        <div class="info-block">
+          <small class="text-muted">Element</small>
+          <div>
+            {% for t in card.types.split(',') %}
+            <span class="type-badge type-{{ t.strip()|lower }}">{{ t.strip() }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% if card.retreat_cost %}
+      <div class="col-6">
+        <div class="info-block">
+          <small class="text-muted">Rückzugskosten</small>
+          <div>{{ card.retreat_cost }} ⚡</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Attacks -->
+    {% if attacks %}
+    <div class="card mb-3">
+      <div class="card-header fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Attacken</div>
+      <div class="card-body p-0">
+        {% for atk in attacks %}
+        <div class="attack-row px-3 py-2 border-bottom">
+          <div class="d-flex justify-content-between">
+            <strong>{{ atk.name }}</strong>
+            <span class="text-danger fw-bold">{{ atk.damage or '–' }}</span>
+          </div>
+          {% if atk.text %}
+          <small class="text-muted">{{ atk.text }}</small>
+          {% endif %}
+          {% if atk.cost %}
+          <div>
+            {% for c in atk.cost %}
+            <span class="type-badge type-{{ c|lower }} small">{{ c }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Weaknesses & Resistances -->
+    {% if weaknesses or resistances %}
+    <div class="row g-3 mb-3">
+      {% if weaknesses %}
+      <div class="col-6">
+        <div class="card h-100">
+          <div class="card-header fw-bold text-danger">Schwächen</div>
+          <div class="card-body">
+            {% for w in weaknesses %}
+            <span class="type-badge type-{{ w.type|lower }}">{{ w.type }}</span>
+            <span class="ms-1">{{ w.value }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% if resistances %}
+      <div class="col-6">
+        <div class="card h-100">
+          <div class="card-header fw-bold text-success">Resistenzen</div>
+          <div class="card-body">
+            {% for r in resistances %}
+            <span class="type-badge type-{{ r.type|lower }}">{{ r.type }}</span>
+            <span class="ms-1">{{ r.value }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Valuation -->
+    <div class="card mb-3">
+      <div class="card-header fw-bold"><i class="bi bi-currency-euro me-2 text-success"></i>Bewertung</div>
+      <div class="card-body">
+        <div class="row text-center g-2">
+          <div class="col-3">
+            <small class="text-muted d-block">Niedrig</small>
+            <strong>{% if card.market_price_low %}€{{ "%.2f"|format(card.market_price_low) }}{% else %}–{% endif %}</strong>
+          </div>
+          <div class="col-3">
+            <small class="text-muted d-block">Mittel</small>
+            <strong>{% if card.market_price_mid %}€{{ "%.2f"|format(card.market_price_mid) }}{% else %}–{% endif %}</strong>
+          </div>
+          <div class="col-3">
+            <small class="text-muted d-block">Hoch</small>
+            <strong>{% if card.market_price_high %}€{{ "%.2f"|format(card.market_price_high) }}{% else %}–{% endif %}</strong>
+          </div>
+          <div class="col-3">
+            <small class="text-muted d-block">Marktpreis</small>
+            <strong class="text-success">{% if card.market_price_market %}€{{ "%.2f"|format(card.market_price_market) }}{% else %}–{% endif %}</strong>
+          </div>
+        </div>
+        {% if card.estimated_value %}
+        <hr>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Geschätzter Wert (Zustand: {{ card.condition }})</span>
+          <span class="fs-4 fw-bold text-success">€{{ "%.2f"|format(card.estimated_value) }}</span>
+        </div>
+        {% endif %}
+        {% if card.purchase_price %}
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span>Kaufpreis</span>
+          <span>€{{ "%.2f"|format(card.purchase_price) }}</span>
+        </div>
+        {% if card.estimated_value %}
+        {% set pl = card.estimated_value - card.purchase_price %}
+        <div class="d-flex justify-content-between align-items-center">
+          <span>Gewinn/Verlust</span>
+          <span class="fw-bold {% if pl >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {% if pl >= 0 %}+{% endif %}€{{ "%.2f"|format(pl) }}
+          </span>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    {% if card.notes %}
+    <div class="alert alert-light border">
+      <i class="bi bi-sticky me-2"></i><strong>Notizen:</strong> {{ card.notes }}
+    </div>
+    {% endif %}
+
+    <div class="d-flex gap-2 mt-3">
+      <a href="/vergleich?ids={{ card.id }}" class="btn btn-outline-primary">
+        <i class="bi bi-bar-chart-steps me-1"></i>Vergleichen
+      </a>
+      <a href="/karte/{{ card.id }}/bearbeiten" class="btn btn-outline-secondary">
+        <i class="bi bi-pencil me-1"></i>Bearbeiten
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

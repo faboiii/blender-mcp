@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Statistiken – Pokemon Tracker{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-graph-up me-2 text-warning"></i>Sammlungsstatistiken</h2>
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        <div class="stat-number">{{ stats.total_cards }}</div>
+        <div class="stat-label">Karten gesamt</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        <div class="stat-number">{{ stats.unique_pokemon }}</div>
+        <div class="stat-label">Einzigartige Karten</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        <div class="stat-number text-success">€{{ "%.2f"|format(stats.total_value) }}</div>
+        <div class="stat-label">Sammlungswert</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card text-center">
+      <div class="card-body">
+        {% if stats.profit_loss >= 0 %}
+        <div class="stat-number text-success">+€{{ "%.2f"|format(stats.profit_loss) }}</div>
+        {% else %}
+        <div class="stat-number text-danger">-€{{ "%.2f"|format(stats.profit_loss|abs) }}</div>
+        {% endif %}
+        <div class="stat-label">Gewinn/Verlust</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Rarity Chart -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-bold">Seltenheit-Verteilung</div>
+      <div class="card-body">
+        <canvas id="rarityChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Type Chart -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-bold">Element-Verteilung</div>
+      <div class="card-body">
+        <canvas id="typeChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top 10 -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header fw-bold">Top 10 wertvollste Karten</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Karte</th>
+                <th>Set</th>
+                <th>Zustand</th>
+                <th>Marktpreis</th>
+                <th>Geschätzter Wert</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for card in top_cards %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    {% if card.image_url %}
+                    <img src="{{ card.image_url }}" alt="" style="height:40px;">
+                    {% endif %}
+                    <strong>{{ card.name }}</strong>
+                    {% if card.is_foil %}<span class="badge bg-info">✨</span>{% endif %}
+                    {% if card.is_graded %}<span class="badge bg-warning text-dark">{{ card.grade_score }}</span>{% endif %}
+                  </div>
+                </td>
+                <td><small class="text-muted">{{ card.set_name or '–' }}</small></td>
+                <td><span class="badge condition-badge condition-{{ card.condition }}">{{ card.condition }}</span></td>
+                <td>{% if card.market_price_market %}€{{ "%.2f"|format(card.market_price_market) }}{% else %}–{% endif %}</td>
+                <td><strong class="text-success">€{{ "%.2f"|format(card.estimated_value) }}</strong></td>
+                <td><a href="/karte/{{ card.id }}" class="btn btn-sm btn-outline-primary">Details</a></td>
+              </tr>
+              {% else %}
+              <tr><td colspan="7" class="text-center text-muted py-3">Noch keine Karten in der Sammlung</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TYPE_COLORS = {
+  'Colorless': '#A8A878', 'Darkness': '#705848', 'Dragon': '#7038F8',
+  'Fairy': '#EE99AC', 'Fighting': '#C03028', 'Fire': '#F08030',
+  'Grass': '#78C850', 'Lightning': '#F8D030', 'Metal': '#B8B8D0',
+  'Psychic': '#F85888', 'Water': '#6890F0', 'default': '#68A090'
+};
+
+// Rarity Chart
+const rarityData = {{ stats.rarities | tojson }};
+new Chart(document.getElementById('rarityChart'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(rarityData),
+    datasets: [{
+      data: Object.values(rarityData),
+      backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#FF6384','#C9CBCF'],
+    }]
+  },
+  options: { plugins: { legend: { position: 'right' } } }
+});
+
+// Type Chart
+const typeData = {{ types_count | tojson }};
+const typeColors = Object.keys(typeData).map(t => TYPE_COLORS[t] || TYPE_COLORS['default']);
+new Chart(document.getElementById('typeChart'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(typeData),
+    datasets: [{
+      label: 'Anzahl Karten',
+      data: Object.values(typeData),
+      backgroundColor: typeColors,
+      borderColor: typeColors.map(c => c),
+      borderWidth: 1
+    }]
+  },
+  options: {
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    plugins: { legend: { display: false } }
+  }
+});
+</script>
+{% endblock %}
