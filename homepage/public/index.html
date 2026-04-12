@@ -3,183 +3,194 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Fabiolous – Kreativität trifft Technologie. Willkommen auf meiner persönlichen Homepage." />
-  <meta property="og:title" content="Fabiolous" />
-  <meta property="og:description" content="Kreativität trifft Technologie." />
-  <meta property="og:type" content="website" />
-  <title>Fabiolous</title>
+  <meta name="description" content="Aufgaben an Fabio senden, Bearbeitungsstatus verfolgen und erledigte Ergebnisse direkt auf der Homepage sehen." />
+  <title>Fabio | Aufgaben & Ergebnisse</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- Navigation -->
   <nav class="nav">
-    <div class="nav__logo">Fabiolous</div>
+    <div class="nav__logo">Fabio</div>
     <ul class="nav__links">
-      <li><a href="#about">Über mich</a></li>
-      <li><a href="#projects">Projekte</a></li>
-      <li><a href="#contact">Kontakt</a></li>
+      <li><a href="#aufgaben">Aufgaben stellen</a></li>
+      <li><a href="#status">Status</a></li>
+      <li><a href="#ergebnisse">Präsentation</a></li>
     </ul>
-    <button class="nav__toggle" aria-label="Menu öffnen">&#9776;</button>
   </nav>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero__content">
-      <span class="hero__tag">Willkommen</span>
-      <h1 class="hero__title">
-        Hallo, ich bin <span class="gradient-text">Fabio</span>.<br />
-        Ich baue <span class="gradient-text">großartige</span> Dinge.
-      </h1>
-      <p class="hero__subtitle">
-        Kreativität trifft Technologie – von 3D-Design bis zu modernen Web-Anwendungen.
-      </p>
-      <div class="hero__actions">
-        <a href="#projects" class="btn btn--primary">Meine Projekte</a>
-        <a href="#contact" class="btn btn--outline">Kontakt aufnehmen</a>
-      </div>
+  <header class="hero">
+    <div class="container hero__inner">
+      <span class="hero__tag">Deine Aufgabe, mein Ergebnis</span>
+      <h1>Stell mir eine Aufgabe – ich erledige sie und präsentiere das Ergebnis hier.</h1>
+      <p>Du kannst mir Ideen, kleine Challenges oder konkrete To-dos schicken. Ich priorisiere sie, arbeite sie ab und zeige transparent, was gerade offen, in Arbeit oder bereits erledigt ist.</p>
+      <a href="#aufgaben" class="btn btn--primary">Jetzt Aufgabe senden</a>
     </div>
-    <div class="hero__visual">
-      <div class="blob blob--1"></div>
-      <div class="blob blob--2"></div>
-      <div class="cube">
-        <div class="cube__face cube__face--front"></div>
-        <div class="cube__face cube__face--back"></div>
-        <div class="cube__face cube__face--right"></div>
-        <div class="cube__face cube__face--left"></div>
-        <div class="cube__face cube__face--top"></div>
-        <div class="cube__face cube__face--bottom"></div>
-      </div>
-    </div>
-  </section>
+  </header>
 
-  <!-- About -->
-  <section id="about" class="section about">
-    <div class="container">
-      <h2 class="section__title">Über mich</h2>
-      <p class="section__subtitle">Leidenschaft für Design und Entwicklung</p>
-      <div class="about__grid">
-        <div class="about__text">
-          <p>
-            Ich bin ein kreativer Entwickler mit einem Auge fürs Detail. Meine Arbeit
-            verbindet ästhetisches Design mit moderner Technologie – von interaktiven
-            3D-Erlebnissen bis hin zu performanten Web-Applikationen.
-          </p>
-          <p>
-            Mit Blender erschaffe ich beeindruckende 3D-Welten, während ich mit
-            modernen Web-Frameworks lebendige digitale Erlebnisse baue.
-          </p>
-          <div class="skills">
-            <span class="skill">Blender 3D</span>
-            <span class="skill">Python</span>
-            <span class="skill">JavaScript</span>
-            <span class="skill">WebGL</span>
-            <span class="skill">Cloudflare</span>
-            <span class="skill">AI / MCP</span>
-          </div>
-        </div>
-        <div class="about__stats">
-          <div class="stat">
-            <span class="stat__number">3D</span>
-            <span class="stat__label">Design & Animation</span>
-          </div>
-          <div class="stat">
-            <span class="stat__number">Web</span>
-            <span class="stat__label">Entwicklung</span>
-          </div>
-          <div class="stat">
-            <span class="stat__number">AI</span>
-            <span class="stat__label">Integration</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+  <main>
+    <section id="aufgaben" class="section">
+      <div class="container">
+        <h2 class="section__title">Aufgabe einreichen</h2>
+        <p class="section__subtitle">Je klarer die Beschreibung, desto besser kann ich liefern.</p>
+        <form id="taskForm" class="card form" autocomplete="off">
+          <label for="name">Dein Name</label>
+          <input id="name" name="name" type="text" placeholder="z. B. Alex" required />
 
-  <!-- Projects -->
-  <section id="projects" class="section projects">
-    <div class="container">
-      <h2 class="section__title">Projekte</h2>
-      <p class="section__subtitle">Was ich gebaut habe</p>
-      <div class="projects__grid">
-        <article class="card">
-          <div class="card__icon">&#127912;</div>
-          <h3 class="card__title">Blender MCP</h3>
-          <p class="card__desc">
-            Model Context Protocol Server für Blender – AI-gesteuerte 3D-Modellierung
-            und Szenengestaltung direkt aus dem Chat.
-          </p>
-          <div class="card__tags">
-            <span>Python</span><span>Blender</span><span>AI</span>
-          </div>
-        </article>
-        <article class="card">
-          <div class="card__icon">&#127760;</div>
-          <h3 class="card__title">Fabiolous.org</h3>
-          <p class="card__desc">
-            Diese Homepage – gebaut mit reinem HTML & CSS, deployed auf Cloudflare Pages
-            für maximale Performance weltweit.
-          </p>
-          <div class="card__tags">
-            <span>HTML</span><span>CSS</span><span>Cloudflare</span>
-          </div>
-        </article>
-        <article class="card">
-          <div class="card__icon">&#9881;</div>
-          <h3 class="card__title">Kommt bald</h3>
-          <p class="card__desc">
-            Spannende neue Projekte sind in Arbeit. Schau regelmäßig vorbei oder
-            melde dich für Updates an.
-          </p>
-          <div class="card__tags">
-            <span>In Entwicklung</span>
-          </div>
-        </article>
-      </div>
-    </div>
-  </section>
+          <label for="title">Titel der Aufgabe</label>
+          <input id="title" name="title" type="text" placeholder="z. B. Erstelle ein Logo-Intro" required />
 
-  <!-- Contact -->
-  <section id="contact" class="section contact">
-    <div class="container">
-      <h2 class="section__title">Kontakt</h2>
-      <p class="section__subtitle">Lass uns zusammenarbeiten</p>
-      <div class="contact__card">
-        <p>Hast du ein Projekt im Kopf oder willst du einfach Hallo sagen?<br />Ich freue mich über deine Nachricht.</p>
-        <a href="mailto:hallo@fabiolous.org" class="btn btn--primary btn--lg">
-          hallo@fabiolous.org
-        </a>
-      </div>
-    </div>
-  </section>
+          <label for="details">Beschreibung</label>
+          <textarea id="details" name="details" rows="5" placeholder="Was genau soll ich machen? Gibt es Stilwünsche, Fristen oder Beispiele?" required></textarea>
 
-  <!-- Footer -->
+          <label for="priority">Priorität</label>
+          <select id="priority" name="priority">
+            <option value="normal">Normal</option>
+            <option value="hoch">Hoch</option>
+            <option value="kritisch">Kritisch</option>
+          </select>
+
+          <button type="submit" class="btn btn--primary">Aufgabe hinzufügen</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="status" class="section section--surface">
+      <div class="container">
+        <h2 class="section__title">Task-Board</h2>
+        <p class="section__subtitle">Live-Übersicht über alle eingereichten Aufgaben.</p>
+        <div id="taskBoard" class="task-board"></div>
+      </div>
+    </section>
+
+    <section id="ergebnisse" class="section">
+      <div class="container">
+        <h2 class="section__title">Erledigte Aufgaben – Präsentation</h2>
+        <p class="section__subtitle">Hier zeige ich, was ich umgesetzt habe.</p>
+        <div id="showcase" class="showcase"></div>
+      </div>
+    </section>
+  </main>
+
   <footer class="footer">
     <div class="container">
-      <p>&copy; 2026 Fabiolous.org – Mit ❤️ gebaut.</p>
+      <p>&copy; 2026 Fabio – Aufgaben werden lokal im Browser gespeichert.</p>
     </div>
   </footer>
 
   <script>
-    // Mobile nav toggle
-    const toggle = document.querySelector('.nav__toggle');
-    const links = document.querySelector('.nav__links');
-    toggle.addEventListener('click', () => links.classList.toggle('nav__links--open'));
+    const STORAGE_KEY = 'fabio-task-board-v1';
+    const taskBoard = document.getElementById('taskBoard');
+    const showcase = document.getElementById('showcase');
+    const taskForm = document.getElementById('taskForm');
 
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+    const seedTasks = [
+      {
+        id: crypto.randomUUID(),
+        name: 'Besucher',
+        title: 'Landingpage-Feedback sammeln',
+        details: 'Bitte den Hero-Bereich bewerten und 3 Verbesserungsideen schicken.',
+        priority: 'normal',
+        status: 'offen',
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        result: ''
+      }
+    ];
+
+    const readTasks = () => {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seedTasks));
+        return seedTasks;
+      }
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return [];
+      }
+    };
+
+    const writeTasks = tasks => localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+
+    const priorityClass = p => ({ normal: 'tag', hoch: 'tag tag--high', kritisch: 'tag tag--critical' }[p] || 'tag');
+
+    const render = () => {
+      const tasks = readTasks();
+      const openTasks = tasks.filter(t => t.status !== 'erledigt');
+      const doneTasks = tasks.filter(t => t.status === 'erledigt').sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+      taskBoard.innerHTML = openTasks.length
+        ? openTasks.map(task => `
+          <article class="card task">
+            <div class="task__head">
+              <h3>${task.title}</h3>
+              <span class="${priorityClass(task.priority)}">${task.priority}</span>
+            </div>
+            <p>${task.details}</p>
+            <div class="task__meta">Von: ${task.name} • Eingereicht: ${new Date(task.createdAt).toLocaleDateString('de-DE')}</div>
+            <div class="task__actions">
+              <button data-action="progress" data-id="${task.id}" class="btn btn--outline">In Arbeit</button>
+              <button data-action="done" data-id="${task.id}" class="btn btn--primary">Als erledigt markieren</button>
+            </div>
+          </article>
+        `).join('')
+        : '<p class="empty">Keine offenen Aufgaben. Schick mir eine neue Challenge!</p>';
+
+      showcase.innerHTML = doneTasks.length
+        ? doneTasks.map(task => `
+          <article class="card showcase__item">
+            <h3>${task.title}</h3>
+            <p>${task.result || 'Ergebnis wurde abgeschlossen und ist bereit zur Präsentation.'}</p>
+            <div class="task__meta">Abgeschlossen am: ${new Date(task.completedAt).toLocaleDateString('de-DE')}</div>
+          </article>
+        `).join('')
+        : '<p class="empty">Sobald ich Aufgaben abschließe, erscheinen sie hier als Präsentation.</p>';
+    };
+
+    taskForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const formData = new FormData(taskForm);
+      const tasks = readTasks();
+      tasks.push({
+        id: crypto.randomUUID(),
+        name: formData.get('name').toString().trim(),
+        title: formData.get('title').toString().trim(),
+        details: formData.get('details').toString().trim(),
+        priority: formData.get('priority').toString(),
+        status: 'offen',
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        result: ''
       });
+      writeTasks(tasks);
+      taskForm.reset();
+      render();
     });
 
-    // Intersection observer for fade-in
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.card, .stat, .about__text').forEach(el => observer.observe(el));
+    document.addEventListener('click', event => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const tasks = readTasks();
+      const item = tasks.find(t => t.id === button.dataset.id);
+      if (!item) return;
+
+      if (button.dataset.action === 'progress') {
+        item.status = 'in-arbeit';
+      }
+
+      if (button.dataset.action === 'done') {
+        item.status = 'erledigt';
+        item.completedAt = new Date().toISOString();
+        const summary = prompt('Kurze Ergebnisbeschreibung für die Präsentation:', item.result || '');
+        if (summary !== null) item.result = summary.trim();
+      }
+
+      writeTasks(tasks);
+      render();
+    });
+
+    render();
   </script>
 </body>
 </html>
